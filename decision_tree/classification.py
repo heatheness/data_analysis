@@ -40,6 +40,8 @@ def entropy(items):
     #     e+= -n * math.log(n)
     # return e
 
+    # test
+
     labels = {}
     for item in items:
         label = item[17]
