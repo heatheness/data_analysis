@@ -3,6 +3,7 @@
 __author__ = 'nyash myash'
 
 import math
+import random
 import collections
 
 """построить решающее дерево. выборки пополам"""
@@ -74,6 +75,130 @@ def information_gain(items, i):
         gain -= p*e
     return gain
 
+def new_information_gain(items, i):
+    """i - номер атрибута по которому строим кучку"""
+    groups = {}
+    gain = entropy(items)
+    for item in items:
+        value = item[i]
+        groups.setdefault(value,[]).append(item)
+    # e = entropy(items)
+    for group in groups.values():
+        p = float(len(group)) / len(items)
+        e = entropy(group)
+        gain -= p*e
+    return gain,groups
+
+
+attr_names = ['name', 'hair', 'feathers', 'eggs', 'milk', 'airborne', 'aquatic', 'predator', 'toothed', 'backbone',
+              'breathes', 'venomous', 'fins', 'legs', 'tail', 'domestic', 'catsize', 'type']
+
+label_names = ['?', 'mammal', 'bird', 'reptile', 'fish', 'amphibian', 'insect', 'crustacean']
+
+
+class Node:
+    def __init__(self, label, attr = None, children=None):
+        self.label = label
+        self.attr = attr
+        self.children = children
+
+    def dump(self, level = 0):
+        indent = '  ' * level
+        if self.label:
+            print '%s---->%s' %(indent,label_names[int(self.label)])
+        else:
+            print '%s%s?'%(indent,attr_names[self.attr])
+            for v,t in self.children.iteritems():
+                print '%s %s:'%(indent,v)
+                t.dump(level+1)
+
+    def guess(self,item):
+        if self.label:
+            return self.label
+        v = item [self.attr]
+        if v in self.children:
+            return self.children[v].guess(item)
+        return '0'
+
+
+
+
+
+
+def select_label(items):
+    # return  None if entropy(items) else 1
+    assert len(items)
+    l = items[0][17]
+    for item in items[1:]:
+        if item[17]!= l:
+            return None
+    return l
+
+def select_attr(items):
+    best_attr = 0
+    best_gain = 0.0
+    best_groups = {}
+    for attr in xrange(1,17):
+        gain,groups = new_information_gain(items, attr)
+        if best_gain < gain:
+            best_attr = attr
+            best_gain = gain
+            best_groups = groups
+    return best_attr,best_groups
+
+
+# attr,groups =  select_attr(zoo)
+# print attr_names[attr]
+
+
+
+
+def learn(items):
+    l = select_label(items)
+    if l:
+        return Node(l)
+    else:
+        attr, groups = select_attr(items)
+        children = {}
+        for v, g in groups.iteritems():
+            children[v] = learn(g)
+        return Node(None,attr,children)
+        # groups = {}
+        # for item in items:
+        #     value = item[l]
+        #     groups.setdefault(value,[]).append(item)
+        # n = Node(l,attr_names,{key:learn(groups[key]) for key in groups.keys()})
+        # return n
+
+
+
+
+# Node(2) --> leaf
+# Node(None,3,{})
+
+
+tree = learn(zoo[:80])
+# tree.dump()
+
+# for i in zoo[80:]:
+#     l = tree.guess(i)
+#     print '%s %s(%s)' %(i[0],label_names[int(l)], label_names[int(i[17])])
+
+
+test = [random.choice(zoo) for i in xrange(80)]
+
+
+
+for i in test:
+    l = tree.guess(i)
+    print '%s %s(%s)' %(i[0],label_names[int(l)], label_names[int(i[17])])
+
+
+
+
+
+
+
 
 def best_match(items):
     #returns most probable class or classes
@@ -90,6 +215,8 @@ def best_match(items):
         return ' or '.join(ans)
 
 
+
+
 def best_atr(items,attributes):
     # returns most informative attribute
     gain = {}
@@ -100,7 +227,8 @@ def best_atr(items,attributes):
 def build_tree(items,attributes):
     if len(attributes) == 0:
         """возвращаемся на уровень выше и считаем наиболее вероятный класс"""
-        return 'unknown'
+        # return 'unknown'
+        return best_match(items)
     else:
         types = [i[17] for i in items]
         max_entropy = math.log(len(set(types)))
@@ -136,15 +264,17 @@ def get_type(item,tree):
             return 'rebuild your tree =)'
 
 
-t = ['aardvark', 'antelope', 'bear', 'boar', 'buffalo', 'calf', 'cavy', 'cheetah', 'deer', 'dolphin', 'elephant',
-     'fruitbat', 'giraffe', 'girl', 'goat', 'gorilla', 'hamster', 'hare', 'leopard', 'lion',
-     'chicken', 'crow', 'dove', 'duck', 'flamingo', 'gull', 'hawk', 'kiwi', 'lark', 'pitviper', 'seasnake', 'slowworm',
-    'bass', 'carp', 'catfish', 'chub', 'dogfish', 'haddock', 'frog', 'flea', 'gnat', 'honeybee', 'housefly', 'clam',
-    'crab', 'crayfish', 'lobster', 'octopus']
 
-
-test_samples = [item for item in zoo if item[0] in t]
-control_samples = [item for item in zoo if item[0] not in t]
+#
+# t = ['aardvark', 'antelope', 'bear', 'boar', 'buffalo', 'calf', 'cavy', 'cheetah', 'deer', 'dolphin', 'elephant',
+#      'fruitbat', 'giraffe', 'girl', 'goat', 'gorilla', 'hamster', 'hare', 'leopard', 'lion',
+#      'chicken', 'crow', 'dove', 'duck', 'flamingo', 'gull', 'hawk', 'kiwi', 'lark', 'pitviper', 'seasnake', 'slowworm',
+#     'bass', 'carp', 'catfish', 'chub', 'dogfish', 'haddock', 'frog', 'flea', 'gnat', 'honeybee', 'housefly', 'clam',
+#     'crab', 'crayfish', 'lobster', 'octopus']
+#
+#
+# test_samples = [item for item in zoo if item[0] in t]
+# control_samples = [item for item in zoo if item[0] not in t]
 
 
 # test_samples = [zoo[i] for i in xrange(len(zoo)) if 0<=i<=20 or 41<=i<=50 or 61<=i<=62 or 66<=i<=71 or 79<=i<=80 or
@@ -154,24 +284,24 @@ control_samples = [item for item in zoo if item[0] not in t]
 #                 87<=i<=90 or 96<=i<=100]
 
 
-atrs = [i for i in xrange(1,17)]
-
-decision_tree = build_tree(test_samples, atrs)
+# atrs = [i for i in xrange(1,17)]
+#
+# decision_tree = build_tree(test_samples, atrs)
 
 # for sample in test_samples:
 #     print sample
 
-print decision_tree
-
-counter = 0
-for sample in control_samples:
-    # print sample[0], ' - ', get_type(sample,decision_tree), ' - ', sample[17]
-    if get_type(sample,decision_tree) == sample[17]:
-        counter +=1
-    else:
-        print sample[0], ' - ', get_type(sample,decision_tree), ' - ', sample[17]
-
-print float(counter)/len(control_samples)*100
+# print decision_tree
+#
+# counter = 0
+# for sample in control_samples:
+#     # print sample[0], ' - ', get_type(sample,decision_tree), ' - ', sample[17]
+#     if get_type(sample,decision_tree) == sample[17]:
+#         counter +=1
+#     else:
+#         print sample[0], ' - ', get_type(sample,decision_tree), ' - ', sample[17]
+#
+# print float(counter)/len(control_samples)*100
 
 # print build_tree(test_samples, atrs)
 
