@@ -4,14 +4,11 @@ __author__ = 'nyash myash'
 
 import math
 import random
-import collections
 
-"""построить решающее дерево. выборки пополам"""
+"""построить решающее дерево"""
 
 
-# /Users/dmitrymakhotin/PycharmProjects/friday/decision_tree
-
-file = open('/Users/dmitrymakhotin/PycharmProjects/friday/decision_tree/zoo.data.txt')
+file = open('/zoo.data.txt')
 
 zoo = []
 
@@ -20,29 +17,8 @@ for l in file:
     assert len(item) == 18
     zoo.append(item)
 
-# def tree():
-#     return collections.defaultdict(tree)
-#
-# t = tree()
-# t['1']['3'] = 4
-# print t
-
-# print zoo
-
 # считаем энтропию
 def entropy(items):
-    # e = 0
-    # k = float(len(items)) - 1
-    # counter=collections.Counter(items[1:])
-    # # print counter
-    # # print dict(counter)
-    # for m in dict(counter).keys():
-    #     n = float(m) /  k
-    #     e+= -n * math.log(n)
-    # return e
-
-    # test
-
     labels = {}
     for item in items:
         label = item[17]
@@ -54,12 +30,6 @@ def entropy(items):
         e+=-p*math.log(p)
     return e
 
-# for z in zoo:
-#     print entropy(z)
-
-mamals = [i for i in zoo if i[17] == '1']
-
-# print entropy(mamals)
 
 def information_gain(items, i):
     """i - номер атрибута по которому строим кучку"""
@@ -121,10 +91,6 @@ class Node:
         return '0'
 
 
-
-
-
-
 def select_label(items):
     # return  None if entropy(items) else 1
     assert len(items)
@@ -147,12 +113,6 @@ def select_attr(items):
     return best_attr,best_groups
 
 
-# attr,groups =  select_attr(zoo)
-# print attr_names[attr]
-
-
-
-
 def learn(items):
     l = select_label(items)
     if l:
@@ -163,21 +123,9 @@ def learn(items):
         for v, g in groups.iteritems():
             children[v] = learn(g)
         return Node(None,attr,children)
-        # groups = {}
-        # for item in items:
-        #     value = item[l]
-        #     groups.setdefault(value,[]).append(item)
-        # n = Node(l,attr_names,{key:learn(groups[key]) for key in groups.keys()})
-        # return n
 
 
-
-#
-# Node(2) --> leaf
-# Node(None,3,{})
-
-
-tree = learn(zoo[:80])
+# tree = learn(zoo[:80])
 # tree.dump()
 
 # for i in zoo[80:]:
@@ -186,10 +134,11 @@ tree = learn(zoo[:80])
 
 
 test = [random.choice(zoo) for i in xrange(80)]
+tree = learn(test)
 
+control = [item for item in zoo if item not in test]
 
-
-for i in test:
+for i in control:
     l = tree.guess(i)
     print '%s %s(%s)' %(i[0],label_names[int(l)], label_names[int(i[17])])
 
@@ -197,6 +146,8 @@ for i in test:
 
 
 
+# --------------------------------------------------------------
+# another variant
 
 
 
@@ -213,7 +164,6 @@ def best_match(items):
         return str(ans[0])
     else:
         return ' or '.join(ans)
-
 
 
 
